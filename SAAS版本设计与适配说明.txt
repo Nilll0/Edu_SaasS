@@ -1,0 +1,115 @@
+# SAAS版本为多租户模式
+
+## 介绍
+### 特点如下：
+
+- 数据隔离：租户之间是数据库级别隔离的，增加安全性，兼顾扩展性
+- 租户数据库自动创建：创建租户时可以创建租户数据库，创建数据库的sql在：hzb-saas-manage模块的src/main/resources/sql/dbinit.sql
+- 域名独立：每个租户有独立的域名，按照访问域名把请求指向到各自的数据库，建议用一个专门的域名泛解析到服务器，给租户开通二级域名使用。
+- 微信配置独立性：每个租户的微信公众号配置支持独立配置。
+
+### 模块说明
+
+- hzb-saas-manage 模块是租户管理模块，属于saas管理端
+- hzb-datasource 为数据源切换模块，主要负责在请求过程中的切换
+- hzb-base-api 租户使用的教务管理系统的后端接口模块
+  * src/main/java/com/hzb/erp/saas 是saas实现包，里面由数据源定位配置/缓存配置/定时任务实现与配置
+  * com.hzb.erp.saas.DataSourceAspect 是AOP的配置，在这里进行多租户数据源的定位
+  * 其他模块功能与单机构版一致
+
+### 数据隔离
+
+- 基于域名来区分不同租户不同数据库
+- 缓存基于租户code来区分
+- 定时任务由专属的job管理组件来进行，多个租户的多个定时任务，是轮询进行的
+
+### 微信配置
+- 暂时每个租户的微信公众号配置都是独立的，
+- 微信支付也是独立设置的，所以每个租户的微信支付都是独立账号，有需要改造成平台统一收款的可以自行二次开发成微信支付多商户模式进行收款。
+- 公众号模板消息/公众号配置，都是各租户独立的。
+
+### 注意事项
+- 因切换数据源是通过请求中的信息获取的，所以只能在当前请求线程中生效。所以异步方法/多线程方法的数据源是不支持的，如@Async注解。
+- 数据源组件中的mybatis plus 的配置在com.hzb.erp.datasource.common.DruidDBConfig.sqlSessionFactory方法中
+
+
+## 配置与部署说明
+
+### SAAS管理端
+
+#### 租户管理模块是前后端分离的，前端需要单独部署一下
+
+- config.js里有管理端的接口地址
+- 前端的ngnix里，配置一下代理用于访问后端。
+ location /manage {
+        proxy_pass   http://123.249.15.88:8107/manage; # SAAS管理端后端地址
+        proxy_redirect    off;
+        proxy_set_header  Host $host;
+        proxy_set_header  X-real-ip $remote_addr;
+        proxy_set_header  X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
+#### 租户管理模块的配置application.yml
+
+- 有个isDemo参数用于演示版，生产环境下需要改成false
+- spring.datasource 里的账号需要有创建、删除、修改数据库的权限，主要用于机构数据库的创建。
+- baseDs为主数据库
+- 默认端口8107
+- 前端需要单独部署
+
+### 机构端/租户端/学校管理端
+
+#### 租户使用端是前后端分离的，前端需要单独部署一下
+
+- config.js里有管理端的接口地址
+- 前端的ngnix里，配置一下代理用于访问后端。
+location /app {
+        proxy_pass   http://123.249.15.88:8108/app; # 租户端后端地址
+        proxy_redirect    off;
+        proxy_set_header  Host $host;
+        proxy_set_header  X-real-ip $remote_addr;
+        proxy_set_header  X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
+### hzb-base-api模块的配置application.yml
+
+- 默认使用saas模式 active: saas
+- 默认端口8108
+- 有个isDemo参数用于演示版，生产环境下需要改成false
+- application-saas.yml 里的数据库为主数据源，和hzb-saas-manage模块的application.yml里的一样
+- application-saas.yml 里的baseDs为主数据库
+
+## 单机构版适配SAAS版的方法
+
+### 说明
+SAAS版本质上是实现了多机构的技术架构，同时增加了一个机构管理端，并且对原来的单机构版代码进行了适配。在机构端的功能上是一致的。
+所以是可以在原来单机构版上做配置即可实现多机构访问。下面说明一下代码的适配部分。
+
+### 适配方法
+
+多机构版多了两个模块，hzb-datasource、hzb-maas-manage，这两个需要拷贝一下。加到模块server目录里，和hzb-base-api并排即可。
+server目录下的pom.xml里增加这两个模块：
+```
+<modules>
+    <module>hzb-common</module>
+    <module>hzb-base-api</module>
+    <module>hzb-wechat</module>
+    <module>hzb-security</module>
+    <module>hzb-datasource</module>
+    <module>hzb-saas-manage</module>
+</modules>
+```
+hzb-common、hzb-security和hzb-wechat也有少量改动，请自行对比代码，如果原来未进行更改可以直接覆盖。
+hzb-base-api增加了com.hzb.erp.saas包，直接拷贝即可。com.hzb-erp.api.base包里有少许改动。
+hzb-base-api的application.yml和application-saas.yml需要覆盖一下，本模块使用saas这个配置。
+具体可以查看一下saas版的源代码。
+
+### 机构初始化数据库的存放位置
+\hzb-saas-manage\src\main\resources\sql\dbinit.sql
+如果机构端的数据库功能有变动，可以把机构的sql放到这个目录。
+
+### saas的机构端数据库和单机构版教务系统的数据库差异
+是基本一致的。
+注意：saas版本的定时任务和单机构不一样，单机构版的sql里的quartz_job表内容清空一下就可以适配saas多机构版了。
+特别注意：单机构版改成saas版之前，需要备份好原单机构版本的数据库。
+

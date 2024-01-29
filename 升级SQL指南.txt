@@ -1,0 +1,516 @@
+## 数据权限变更sql
+####  1.4.0208 增加年级
+ALTER TABLE `class` ADD COLUMN `grade_id` int NULL COMMENT '年级ID' AFTER `org_id`;
+ALTER TABLE `student` ADD COLUMN `grade_id` int NULL COMMENT '年级ID';
+ALTER TABLE `course` ADD COLUMN `grade_ids` varchar(500) NULL COMMENT '适用年级' AFTER `salary`;
+ALTER TABLE `course` ADD COLUMN `grade_names` varchar(500) NULL COMMENT '适用年级名';
+ALTER TABLE `student` MODIFY COLUMN `grade` year NULL DEFAULT NULL COMMENT '入学年份';
+INSERT INTO `sys_permission`( `name`, `parent_id`, `url`, `code`, `path`, `enabled`, `group_name`) VALUES ('年级管理', '', NULL, 'classgradeList', NULL, 1, '教务管理');
+
+DROP TABLE IF EXISTS `class_grade`;
+CREATE TABLE `class_grade`  (
+  `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '年级名称',
+  `year` int(4) NOT NULL COMMENT '入学年份',
+  `remark` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '备注',
+  `sort_num` int(11) NULL DEFAULT 0 COMMENT '排序',
+  `creator` bigint(20) UNSIGNED NULL DEFAULT NULL COMMENT '创建人',
+  `editor` bigint(20) UNSIGNED NULL DEFAULT NULL COMMENT '编辑人',
+  `add_time` datetime(0) NULL DEFAULT NULL COMMENT '添加时间',
+  `edit_time` datetime(0) NULL DEFAULT NULL COMMENT '编辑时间',
+  `deleted` tinyint(1) NULL DEFAULT 0 COMMENT '删除标记',
+  PRIMARY KEY (`id`) USING BTREE
+) ENGINE = MyISAM AUTO_INCREMENT = 6 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '年级表' ROW_FORMAT = Dynamic;
+
+INSERT INTO `class_grade` VALUES (1, '一年级', 2023, NULL, 1, NULL, NULL, NULL, NULL, 0);
+INSERT INTO `class_grade` VALUES (2, '二年级', 2022, NULL, 2, NULL, NULL, NULL, NULL, 0);
+INSERT INTO `class_grade` VALUES (3, '三年级', 2021, NULL, 3, NULL, NULL, NULL, NULL, 0);
+INSERT INTO `class_grade` VALUES (4, '四年级', 2020, NULL, 4, NULL, NULL, NULL, NULL, 0);
+INSERT INTO `class_grade` VALUES (5, '五年级', 2019, NULL, 5, NULL, NULL, NULL, NULL, 0);
+
+####  1.3.1212 wx_access增加字段reg_from
+ALTER TABLE `wx_access` ADD COLUMN `reg_from` varchar(10) NULL DEFAULT 'wx' COMMENT 'wx公众号注册mp小程序注册' AFTER `country`;
+
+####  1.3.1212 增加两个点名设置
+```
+INSERT INTO `setting_option` VALUES (36, 1, '老师在上课前多少小时可点名', 'teacher_sign_limit_before_lesson', '1', 'int', '0表示不限制', 0);
+INSERT INTO `setting_option` VALUES (37, 1, '老师在下课后多少小时可点名', 'teacher_sign_limit_after_lesson', '10', 'int', '0表示不限制', 0);
+
+INSERT INTO `sys_permission`(`id`, `name`, `parent_id`, `url`, `code`, `path`, `enabled`, `group_name`) VALUES (89, '课表', '', NULL, 'ht_btn_lesson', NULL, 1, '移动端权限');
+INSERT INTO `sys_permission`(`id`, `name`, `parent_id`, `url`, `code`, `path`, `enabled`, `group_name`) VALUES (90, '报名', '', NULL, 'ht_btn_contract', NULL, 1, '移动端权限');
+INSERT INTO `sys_permission`(`id`, `name`, `parent_id`, `url`, `code`, `path`, `enabled`, `group_name`) VALUES (91, '班级', '', NULL, 'ht_btn_class', NULL, 1, '移动端权限');
+INSERT INTO `sys_permission`(`id`, `name`, `parent_id`, `url`, `code`, `path`, `enabled`, `group_name`) VALUES (92, '课程', '', NULL, 'ht_btn_course', NULL, 1, '移动端权限');
+INSERT INTO `sys_permission`(`id`, `name`, `parent_id`, `url`, `code`, `path`, `enabled`, `group_name`) VALUES (93, '添加学员', '', NULL, 'ht_btn_addstudent', NULL, 1, '移动端权限');
+INSERT INTO `sys_permission`(`id`, `name`, `parent_id`, `url`, `code`, `path`, `enabled`, `group_name`) VALUES (94, '我的客户', '', NULL, 'ht_btn_mycustomer', NULL, 1, '移动端权限');
+INSERT INTO `sys_permission`(`id`, `name`, `parent_id`, `url`, `code`, `path`, `enabled`, `group_name`) VALUES (95, '报名记录', '', NULL, 'ht_btn_contractrecord', NULL, 1, '移动端权限');
+INSERT INTO `sys_permission`(`id`, `name`, `parent_id`, `url`, `code`, `path`, `enabled`, `group_name`) VALUES (96, '点名记录', '', NULL, 'ht_btn_signrecord', NULL, 1, '移动端权限');
+INSERT INTO `sys_permission`(`id`, `name`, `parent_id`, `url`, `code`, `path`, `enabled`, `group_name`) VALUES (97, '作业', '', NULL, 'ht_btn_homework', NULL, 1, '移动端权限');
+INSERT INTO `sys_permission`(`id`, `name`, `parent_id`, `url`, `code`, `path`, `enabled`, `group_name`) VALUES (98, '点评记录', '', NULL, 'ht_btn_evaluation', NULL, 1, '移动端权限');
+INSERT INTO `sys_permission`(`id`, `name`, `parent_id`, `url`, `code`, `path`, `enabled`, `group_name`) VALUES (99, '排课', '', NULL, 'ht_btn_schedule', NULL, 1, '移动端权限');
+
+```
+####  1.3.1212 bug修复
+```
+ALTER TABLE `setting_notice` ADD COLUMN `notice_remark` VARCHAR(255) NULL COMMENT '公众号消息备注信息' AFTER `params`;
+```
+####  1.3.1111 bug修复
+```
+ALTER TABLE `material_record` ADD COLUMN `school_id` bigint(20) NULL COMMENT '学校id' AFTER `org_id`;
+```
+
+####  1.3.1001 数据权限优化变更sql
+
+```
+ALTER TABLE `course` ADD COLUMN `salary` decimal(10, 2) UNSIGNED NULL DEFAULT 0 COMMENT '消课课酬(元/课)';
+```
+
+####  1.3.0801 数据权限优化变更sql
+-- 注意 本次更新主要针对数据权限做了重构设计，需要清空原来数据权限设置的记录，并重新设置权限，数据只针对重新创建的数据有效。
+-- 清空sql如下：
+TRUNCATE `data_permission_custom`;
+TRUNCATE `data_permission`;
+
+ALTER TABLE `class` ADD COLUMN `school_id` bigint(20) NULL COMMENT '创建者所属学校id';
+ALTER TABLE `user` ADD COLUMN `school_id` bigint(20) NULL COMMENT '所属学校id';
+ALTER TABLE `user` ADD COLUMN `org_id` bigint(20) NULL COMMENT '创建者所属组织ID';
+ALTER TABLE `teach_evaluation` ADD COLUMN `org_id` bigint(20) NULL COMMENT '被评价老师所属组织ID';
+ALTER TABLE `lesson_student` ADD COLUMN `org_id` bigint(20) NULL COMMENT '上课老师所属组织ID';
+ALTER TABLE `classroom` ADD COLUMN `school_id` bigint(20) NULL COMMENT '创建者所属学校ID';
+-- ALTER TABLE `credit_exchange` ADD COLUMN `school_id` bigint(20) NULL COMMENT '兑换学生的学校ID';
+-- ALTER TABLE `credit_mall` ADD COLUMN `school_id` bigint(20) NULL COMMENT '创建者所属学校ID';
+ALTER TABLE `student_credit_log` ADD COLUMN `school_id` bigint(20) NULL COMMENT '学生所属学校ID';
+ALTER TABLE `lesson` ADD COLUMN `school_id` bigint(20) NULL COMMENT '老师所属学校ID';
+-- ALTER TABLE `material` ADD COLUMN `school_id` bigint(20) NULL COMMENT '创建者所属学校ID';
+ALTER TABLE `material_record` ADD COLUMN `org_id` bigint(20) NULL COMMENT '所属物料的组织ID';
+ALTER TABLE `shop_order` ADD COLUMN `school_id` bigint(20) NULL COMMENT '学生所在学校的id';
+ALTER TABLE `shop_order_refund` ADD COLUMN `school_id` bigint(20) NULL COMMENT '所属order的学校ID';
+ALTER TABLE `appointment` ADD COLUMN `school_id` bigint(20) NULL COMMENT '学生所属学校ID';
+ALTER TABLE `student_leave` ADD COLUMN `school_id` bigint(20) NULL COMMENT '学生所属学校ID';
+ALTER TABLE `course_trial_record` ADD COLUMN `school_id` bigint(20) NULL COMMENT '学生所属学校ID';
+ALTER TABLE `student_course` ADD COLUMN `org_id` bigint(20) NULL COMMENT '报名老师所属组织ID';
+ALTER TABLE `staff` ADD COLUMN `org_id` bigint(20) NULL COMMENT 'STAFF所属组织ID';
+ALTER TABLE `student` ADD COLUMN `org_id` bigint(20) NULL COMMENT '创建者所属组织ID';
+ALTER TABLE `class` ADD COLUMN `org_id` bigint(20) NULL COMMENT '创建者所属组织ID';
+ALTER TABLE `classroom` ADD COLUMN `org_id` bigint(20) NULL COMMENT '创建者所属组织ID';
+ALTER TABLE `grade` ADD COLUMN `org_id` bigint(20) NULL COMMENT '创建者所属组织ID';
+ALTER TABLE `course` ADD COLUMN `org_id` bigint(20) NULL COMMENT '创建者所属组织ID';
+ALTER TABLE `course_trial` ADD COLUMN `org_id` bigint(20) NULL COMMENT '创建者所属组织ID';
+ALTER TABLE `credit_mall` ADD COLUMN `org_id` bigint(20) NULL COMMENT '创建者所属组织ID';
+ALTER TABLE `cashout` ADD COLUMN `org_id` bigint(20) NULL COMMENT '创建者所属组织ID';
+ALTER TABLE `homework` ADD COLUMN `org_id` bigint(20) NULL COMMENT '创建者所属组织ID';
+ALTER TABLE `lesson` ADD COLUMN `org_id` bigint(20) NULL COMMENT '创建者所属组织ID';
+ALTER TABLE `lesson_schedule` ADD COLUMN `org_id` bigint(20) NULL COMMENT '创建者所属组织ID';
+ALTER TABLE `subject` ADD COLUMN `org_id` bigint(20) NULL COMMENT '创建者所属组织ID';
+ALTER TABLE `material` ADD COLUMN `org_id` bigint(20) NULL COMMENT '创建者所属组织ID';
+ALTER TABLE `finance_record` ADD COLUMN `org_id` bigint(20) NULL COMMENT '创建者所属组织ID';
+ALTER TABLE `operation_record` ADD COLUMN `org_id` bigint(20) NULL COMMENT '创建者所属组织ID';
+ALTER TABLE `sys_log` ADD COLUMN `org_id` bigint(20) NULL COMMENT '创建者所属组织ID';
+ALTER TABLE `contact_record` ADD COLUMN `org_id` bigint(20) NULL COMMENT '创建者所属组织ID';
+ALTER TABLE `data_permission` ADD COLUMN `owner_org_field` varchar(20) NULL COMMENT '数据所有组织字段名';
+ALTER TABLE `shop_order` ADD COLUMN `counselor` bigint(20) NULL COMMENT '学生的顾问';
+ALTER TABLE `appointment` ADD COLUMN `counselor` bigint(20) NULL COMMENT '学生的顾问';
+ALTER TABLE `student_leave` ADD COLUMN `counselor` bigint(20) NULL COMMENT '学生的顾问';
+ALTER TABLE `data_permission_custom` ADD COLUMN `position_id` bigint(20) NULL COMMENT '岗位id';
+
+ALTER TABLE `class` ADD INDEX( `school_id` );
+ALTER TABLE `user` ADD INDEX( `school_id` );
+ALTER TABLE `user` ADD INDEX( `org_id` );
+ALTER TABLE `teach_evaluation` ADD INDEX( `org_id` );
+ALTER TABLE `lesson_student` ADD INDEX( `org_id` );
+ALTER TABLE `classroom` ADD INDEX( `school_id` );
+ALTER TABLE `credit_exchange` ADD INDEX( `school_id` );
+ALTER TABLE `credit_mall` ADD INDEX( `school_id` );
+ALTER TABLE `student_credit_log` ADD INDEX( `school_id` );
+ALTER TABLE `lesson` ADD INDEX( `school_id` );
+ALTER TABLE `material` ADD INDEX( `school_id` );
+ALTER TABLE `material_record` ADD INDEX( `org_id` );
+ALTER TABLE `shop_order` ADD INDEX( `school_id` );
+ALTER TABLE `shop_order_refund` ADD INDEX( `school_id` );
+ALTER TABLE `appointment` ADD INDEX( `school_id` );
+ALTER TABLE `student_leave` ADD INDEX( `school_id` );
+ALTER TABLE `course_trial_record` ADD INDEX( `school_id` );
+ALTER TABLE `student_course` ADD INDEX( `org_id` );
+ALTER TABLE `staff` ADD INDEX( `org_id` );
+ALTER TABLE `student` ADD INDEX( `org_id` );
+ALTER TABLE `class` ADD INDEX( `org_id` );
+ALTER TABLE `classroom` ADD INDEX( `org_id` );
+ALTER TABLE `grade` ADD INDEX( `org_id` );
+ALTER TABLE `course` ADD INDEX( `org_id` );
+ALTER TABLE `course_trial` ADD INDEX( `org_id` );
+ALTER TABLE `credit_mall` ADD INDEX( `org_id` );
+ALTER TABLE `cashout` ADD INDEX( `org_id` );
+ALTER TABLE `homework` ADD INDEX( `org_id` );
+ALTER TABLE `lesson` ADD INDEX( `org_id` );
+ALTER TABLE `lesson_schedule` ADD INDEX( `org_id` );
+ALTER TABLE `subject` ADD INDEX( `org_id` );
+ALTER TABLE `material` ADD INDEX( `org_id` );
+ALTER TABLE `finance_record` ADD INDEX( `org_id` );
+ALTER TABLE `operation_record` ADD INDEX( `org_id` );
+ALTER TABLE `sys_log` ADD INDEX( `org_id` );
+ALTER TABLE `contact_record` ADD INDEX( `org_id` );
+ALTER TABLE `student` ADD INDEX( `school_id` );
+
+ALTER TABLE `data_permission_custom` CHANGE COLUMN `permission_id` `position_id` bigint(20) NOT NULL COMMENT '岗位id';
+
+## 数据增量变动sql
+####  1.3.0701 积分商城
+
+CREATE TABLE `credit_exchange` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `credit_mall_id` bigint(20) unsigned NOT NULL COMMENT '积分商城礼品id',
+  `school_id` bigint(20) unsigned DEFAULT NULL COMMENT '学校id',
+  `creator` bigint(20) unsigned DEFAULT NULL COMMENT '创建人',
+  `editor` bigint(20) unsigned DEFAULT NULL COMMENT '编辑人',
+  `add_time` datetime DEFAULT NULL COMMENT '添加时间',
+  `edit_time` datetime DEFAULT NULL COMMENT '编辑时间',
+  `deleted` tinyint(1) DEFAULT '0' COMMENT '删除标记',
+  `student_id` bigint(20) unsigned NOT NULL COMMENT '学生id',
+  `user_id` bigint(20) unsigned NOT NULL COMMENT '学生账号id',
+  `num` int(11) NOT NULL COMMENT '兑换数量',
+  `credit` varchar(255) NOT NULL COMMENT '花费积分',
+  `verify_state` tinyint(4) DEFAULT '1' COMMENT '审核状态',
+  `verify_staff` bigint(20) unsigned DEFAULT NULL COMMENT '审核人',
+  `verify_time` datetime DEFAULT NULL COMMENT '审核时间',
+  `verify_remark` varchar(255) DEFAULT NULL COMMENT '审核备注',
+  PRIMARY KEY (`id`),
+  KEY `student_id` (`student_id`),
+  KEY `credit_mall_id` (`credit_mall_id`)
+) ENGINE=MyISAM AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COMMENT='积分商城兑换记录';
+
+CREATE TABLE `credit_mall` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `school_id` bigint(20) unsigned DEFAULT NULL COMMENT '所属学校',
+  `material_id` bigint(20) unsigned NOT NULL COMMENT '物料分类',
+  `category_id` bigint(20) unsigned NOT NULL COMMENT '礼品分类ID',
+  `category_name` varchar(100) DEFAULT NULL COMMENT '分类名称',
+  `name` varchar(100) DEFAULT NULL COMMENT '礼品名称',
+  `credit` int(11) DEFAULT NULL COMMENT '兑换积分',
+  `state` tinyint(1) DEFAULT '1' COMMENT '是否可以兑换',
+  `sale_num` int(10) unsigned DEFAULT '0' COMMENT '历史兑换数量',
+  `view_num` int(10) unsigned DEFAULT '0' COMMENT '预览次数',
+  `cover` varchar(255) DEFAULT NULL,
+  `content` text COMMENT '详情内容',
+  `creator` bigint(20) unsigned DEFAULT NULL COMMENT '创建人',
+  `editor` bigint(20) unsigned DEFAULT NULL COMMENT '编辑人',
+  `add_time` datetime DEFAULT NULL COMMENT '添加时间',
+  `edit_time` datetime DEFAULT NULL COMMENT '编辑时间',
+  `deleted` tinyint(1) DEFAULT '0' COMMENT '删除标记',
+  PRIMARY KEY (`id`),
+  KEY `material_id` (`material_id`)
+) ENGINE=MyISAM AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COMMENT='积分商城礼品表';
+
+-- erp_empty.material definition
+
+CREATE TABLE `material` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `school_id` bigint(20) unsigned NOT NULL COMMENT '所属学校',
+  `category_id` bigint(20) unsigned NOT NULL COMMENT '所属分类ID',
+  `category_name` varchar(255) DEFAULT NULL COMMENT '分类名',
+  `name` varchar(100) NOT NULL COMMENT '物料名称',
+  `storage` int(11) DEFAULT '0' COMMENT '库存量',
+  `info` varchar(255) DEFAULT NULL COMMENT '物料说明',
+  `cover` varchar(200) DEFAULT NULL COMMENT '封面图',
+  `creator` bigint(20) unsigned DEFAULT NULL COMMENT '创建人',
+  `editor` bigint(20) unsigned DEFAULT NULL COMMENT '编辑人',
+  `add_time` datetime DEFAULT NULL COMMENT '添加时间',
+  `edit_time` datetime DEFAULT NULL COMMENT '编辑时间',
+  `deleted` tinyint(1) DEFAULT '0' COMMENT '删除标记',
+  `state` tinyint(1) DEFAULT '1' COMMENT '启用状态',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COMMENT='物料表';
+
+-- erp_empty.material_record definition
+
+CREATE TABLE `material_record` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `material_id` bigint(20) unsigned NOT NULL COMMENT '物料ID',
+  `amount` int(11) DEFAULT NULL COMMENT '变动数量',
+  `reason` varchar(50) DEFAULT NULL COMMENT '变动原因说明',
+  `change_type` tinyint(4) DEFAULT NULL COMMENT '变动类型1入库2出库3积分商城出库 ',
+  `change_target_id` bigint(20) unsigned DEFAULT NULL COMMENT '变动对象id如积分商城里的商品id',
+  `remark` varchar(100) DEFAULT NULL COMMENT '备注信息',
+  `creator` bigint(20) unsigned DEFAULT NULL COMMENT '创建人',
+  `editor` bigint(20) unsigned DEFAULT NULL COMMENT '编辑人',
+  `add_time` datetime DEFAULT NULL COMMENT '变动时间',
+  `edit_time` datetime DEFAULT NULL COMMENT '编辑时间',
+  `deleted` tinyint(1) DEFAULT '0' COMMENT '删除标记',
+  `student_id` bigint(20) unsigned DEFAULT NULL COMMENT '涉及学生id',
+  `staff_id` bigint(20) unsigned DEFAULT NULL COMMENT '涉及员工id',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COMMENT='物料出入库记录';
+
+ALTER TABLE student ADD COLUMN `credit` datetime NULL COMMENT '学生积分';
+
+####  1.2.0601 debug
+```
+
+ALTER TABLE shop_order ADD COLUMN `cancel_time` datetime NULL COMMENT '取消时间' AFTER `pay_time`;
+
+```
+####  1.2.0601 在线购课
+
+```
+DROP TABLE IF EXISTS `course_trial`;
+CREATE TABLE `course_trial`  (
+  `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `course_id` bigint(20) UNSIGNED NOT NULL COMMENT '课程',
+  `title` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '名称',
+  `quantity` int(11) NOT NULL DEFAULT 0 COMMENT '发行数量',
+  `remaining_quantity` int(11) NULL DEFAULT NULL COMMENT '剩余数量',
+  `lesson_count` int(11) UNSIGNED NOT NULL DEFAULT 0 COMMENT '课时数',
+  `expire_days` int(11) NOT NULL COMMENT '领取后有效天数',
+  `end_date` date NOT NULL COMMENT '发行结束日期',
+  `state` tinyint(1) NULL DEFAULT 1 COMMENT '启用状态',
+  `creator` bigint(20) NULL DEFAULT NULL COMMENT '创建人',
+  `editor` bigint(20) NULL DEFAULT NULL COMMENT '编辑人',
+  `add_time` datetime(0) NULL DEFAULT NULL COMMENT '添加时间',
+  `edit_time` datetime(0) NULL DEFAULT NULL COMMENT '编辑时间',
+  `deleted` tinyint(1) NULL DEFAULT 0 COMMENT '删除标记',
+  PRIMARY KEY (`id`) USING BTREE,
+  INDEX `course_id`(`course_id`) USING BTREE
+) ENGINE = MyISAM AUTO_INCREMENT = 12 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '课程体验卡' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Table structure for course_trial_record
+-- ----------------------------
+DROP TABLE IF EXISTS `course_trial_record`;
+CREATE TABLE `course_trial_record`  (
+  `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `trial_id` bigint(20) UNSIGNED NOT NULL COMMENT '卡ID',
+  `student_id` bigint(20) NOT NULL COMMENT '学生ID',
+  `user_id` bigint(20) NULL DEFAULT NULL COMMENT '学生账号id',
+  `student_course_id` bigint(20) NULL DEFAULT NULL COMMENT '生成的学生课程关联ID',
+  `add_time` datetime(0) NULL DEFAULT NULL COMMENT '领取时间',
+  `expired_date` date NULL DEFAULT NULL COMMENT '到期时间',
+  `lesson_count` int(11) NULL DEFAULT NULL COMMENT '领取到数量',
+  PRIMARY KEY (`id`) USING BTREE,
+  INDEX `student_id`(`student_id`) USING BTREE
+) ENGINE = MyISAM AUTO_INCREMENT = 18 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '课程体验卡领取记录' ROW_FORMAT = Fixed;
+
+-- ----------------------------
+-- Table structure for shop_order
+-- ----------------------------
+DROP TABLE IF EXISTS `shop_order`;
+CREATE TABLE `shop_order`  (
+  `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `sn` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '订单号',
+  `user_id` bigint(20) UNSIGNED NOT NULL COMMENT '用户',
+  `student_id` bigint(20) UNSIGNED NOT NULL COMMENT '学生id',
+  `order_money` decimal(10, 2) NOT NULL COMMENT '订单金额',
+  `pay_money` decimal(10, 2) NULL DEFAULT NULL COMMENT '支付金额',
+  `state` tinyint(4) NOT NULL DEFAULT 0 COMMENT '订单状态',
+  `remark` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '备注',
+  `pay_time` datetime(0) NULL DEFAULT NULL COMMENT '支付时间',
+  `refunded` tinyint(1) NULL DEFAULT 0 COMMENT '是否已退款',
+  `creator` bigint(20) NULL DEFAULT NULL COMMENT '创建人',
+  `editor` bigint(20) NULL DEFAULT NULL COMMENT '编辑人',
+  `add_time` datetime(0) NULL DEFAULT NULL COMMENT '添加时间',
+  `edit_time` datetime(0) NULL DEFAULT NULL COMMENT '编辑时间',
+  `deleted` tinyint(1) NULL DEFAULT 0 COMMENT '删除标记',
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE INDEX `sn`(`sn`) USING BTREE,
+  INDEX `student_id`(`student_id`, `state`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 106 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '订单' ROW_FORMAT = Compact;
+
+-- ----------------------------
+-- Table structure for shop_order_item
+-- ----------------------------
+DROP TABLE IF EXISTS `shop_order_item`;
+CREATE TABLE `shop_order_item`  (
+  `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `order_id` bigint(50) UNSIGNED NOT NULL COMMENT '订单号',
+  `item_id` bigint(20) UNSIGNED NOT NULL COMMENT '课程id',
+  `item_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '名称',
+  `item_type` tinyint(4) NULL DEFAULT NULL COMMENT '购买物品类型 1 课程',
+  `price` decimal(10, 2) NULL DEFAULT NULL COMMENT '购买价格',
+  `quantity` int(10) UNSIGNED NULL DEFAULT NULL COMMENT '购买数量',
+  `cover` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '图片',
+  `add_time` datetime(0) NULL DEFAULT NULL COMMENT '添加时间',
+  PRIMARY KEY (`id`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 81 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '订单关联物品列表' ROW_FORMAT = Compact;
+
+-- ----------------------------
+-- Table structure for shop_order_refund
+-- ----------------------------
+DROP TABLE IF EXISTS `shop_order_refund`;
+CREATE TABLE `shop_order_refund`  (
+  `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `refund_sn` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '退款编号',
+  `order_id` bigint(20) UNSIGNED NOT NULL COMMENT '订单id',
+  `user_id` bigint(20) UNSIGNED NULL DEFAULT NULL COMMENT '学生端账号id',
+  `student_id` bigint(20) NULL DEFAULT NULL COMMENT '学生id',
+  `item_names` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '物品名称',
+  `refund_money` decimal(10, 2) UNSIGNED NOT NULL COMMENT '退款金额',
+  `reason_type` tinyint(4) NULL DEFAULT NULL COMMENT '原因类型',
+  `reason` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '原因描述',
+  `state` tinyint(4) NOT NULL COMMENT '状态',
+  `verify_staff` bigint(20) UNSIGNED NULL DEFAULT NULL COMMENT '审核人',
+  `verify_time` datetime(0) NULL DEFAULT NULL COMMENT '审核时间',
+  `verify_remark` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '审核备注',
+  `wx_refund_id` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '微信退款id',
+  `add_time` datetime(0) NULL DEFAULT NULL COMMENT '申请时间',
+  `operator_id` bigint(20) NULL DEFAULT NULL COMMENT '执行退款人ID',
+  `operation_time` datetime(0) NULL DEFAULT NULL COMMENT '执行退款时间',
+  `operator_name` varchar(30) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '执行退款人姓名',
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE INDEX `sn`(`refund_sn`) USING BTREE,
+  INDEX `user_id`(`user_id`) USING BTREE,
+  INDEX `bill_id`(`order_id`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Compact;
+
+-- ----------------------------
+-- Table structure for shop_payment
+-- ----------------------------
+DROP TABLE IF EXISTS `shop_payment`;
+CREATE TABLE `shop_payment`  (
+  `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `order_id` int(11) NOT NULL COMMENT '订单id',
+  `user_id` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '手机端账号id',
+  `order_sn` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '订单编号',
+  `wx_trade_id` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '微信交易号',
+  `wx_openid` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '微信支付者openid',
+  `pay_money` decimal(11, 2) NOT NULL COMMENT '支付金额',
+  `add_time` datetime(0) NULL DEFAULT NULL COMMENT '添加时间',
+  PRIMARY KEY (`id`) USING BTREE
+) ENGINE = MyISAM AUTO_INCREMENT = 6 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '支付记录表' ROW_FORMAT = Dynamic;
+
+INSERT INTO `dict`(`id`, `name`, `code`, `remark`) VALUES (3, '退款类型', 'refund_type', '退款类型选项')
+ALTER TABLE `student_course` ADD COLUMN `from_trial` tinyint(1) NULL DEFAULT 0 COMMENT '是否来自于体验卡';
+ALTER TABLE `student` DROP COLUMN `wx_access_id`;
+ALTER TABLE `course` ADD COLUMN `for_sale` tinyint(1) NULL DEFAULT 0 COMMENT '是否上架中';
+ALTER TABLE `course` ADD COLUMN `recommend` tinyint(1) NULL DEFAULT 0 COMMENT '是否推荐';
+ALTER TABLE `course` ADD COLUMN `cover` varchar(255) NULL COMMENT '封面';
+ALTER TABLE `course` ADD COLUMN `close_date` date NULL DEFAULT NULL COMMENT '报名截止日期';
+ALTER TABLE `course` ADD COLUMN `teacher_info` varchar(255) NULL COMMENT '师资信息';
+ALTER TABLE `course` ADD COLUMN `service_info` varchar(255) NULL COMMENT '服务说明';
+ALTER TABLE `course` ADD COLUMN `storage` int(11) NULL DEFAULT 0 COMMENT '库存名额';
+ALTER TABLE `subject` ADD COLUMN `sort_num` int NULL DEFAULT 0 COMMENT '排序值';
+
+-- ----------------------------
+-- Table structure for course_comment
+-- ----------------------------
+DROP TABLE IF EXISTS `course_comment`;
+CREATE TABLE `course_comment`  (
+  `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `course_id` bigint(20) UNSIGNED NOT NULL COMMENT '所属课程',
+  `student_id` bigint(20) UNSIGNED NOT NULL COMMENT '学生id',
+  `content` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '章节标题',
+  `score` tinyint(4) NULL DEFAULT 5 COMMENT '打分',
+  `state` tinyint(1) NULL DEFAULT 0 COMMENT '发布状态',
+  `creator` bigint(20) NULL DEFAULT NULL COMMENT '创建人',
+  `editor` bigint(20) NULL DEFAULT NULL COMMENT '编辑人',
+  `add_time` datetime(0) NULL DEFAULT NULL COMMENT '添加时间',
+  `edit_time` datetime(0) NULL DEFAULT NULL COMMENT '编辑时间',
+  `deleted` tinyint(1) NULL DEFAULT 0 COMMENT '删除标记',
+  PRIMARY KEY (`id`) USING BTREE,
+  INDEX `course_id`(`course_id`) USING BTREE,
+  INDEX `student_id`(`student_id`) USING BTREE
+) ENGINE = MyISAM AUTO_INCREMENT = 9 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '课程评价' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Table structure for course_images
+-- ----------------------------
+DROP TABLE IF EXISTS `course_image`;
+CREATE TABLE `course_images`  (
+  `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `course_id` bigint(20) UNSIGNED NOT NULL COMMENT '所属课程',
+  `image_url` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '图片地址',
+  `creator` bigint(20) NULL DEFAULT NULL COMMENT '创建人',
+  `editor` bigint(20) NULL DEFAULT NULL COMMENT '编辑人',
+  `add_time` datetime(0) NULL DEFAULT NULL COMMENT '添加时间',
+  `edit_time` datetime(0) NULL DEFAULT NULL COMMENT '编辑时间',
+  `deleted` tinyint(1) NULL DEFAULT 0 COMMENT '删除标记',
+  PRIMARY KEY (`id`) USING BTREE
+) ENGINE = MyISAM AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '课程介绍图片' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Table structure for course_section
+-- ----------------------------
+DROP TABLE IF EXISTS `course_section`;
+CREATE TABLE `course_section`  (
+  `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `course_id` bigint(20) UNSIGNED NOT NULL COMMENT '所属课程',
+  `title` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '章节标题',
+  `lesson_count` int(10) NOT NULL COMMENT '计划课时数',
+  `creator` bigint(20) NULL DEFAULT NULL COMMENT '创建人',
+  `editor` bigint(20) NULL DEFAULT NULL COMMENT '编辑人',
+  `add_time` datetime(0) NULL DEFAULT NULL COMMENT '添加时间',
+  `edit_time` datetime(0) NULL DEFAULT NULL COMMENT '编辑时间',
+  `deleted` tinyint(1) NULL DEFAULT 0 COMMENT '删除标记',
+  PRIMARY KEY (`id`) USING BTREE
+) ENGINE = MyISAM AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '课程大纲' ROW_FORMAT = Dynamic;
+
+
+```
+
+#### 1.1.0425 数据增量变动sql
+- 2022.4.25 实现预约功能
+- 2022.3.28 实现系统设置管理定时任务
+- 2022.3.17 实现微信配置的数据库存储
+
+```
+ALTER TABLE `org` DROP COLUMN `ship_routes`;
+ALTER TABLE `org` ADD COLUMN `name_path` varchar(255) NULL COMMENT '组织名路径' AFTER `id_path`;
+ALTER TABLE `course` ADD COLUMN `bookable` tinyint(1) NULL DEFAULT 0 COMMENT '是否可以预约';
+ALTER TABLE `lesson` ADD COLUMN `bookable` tinyint(1) NULL DEFAULT 0 COMMENT '是否开放预约';
+ALTER TABLE `appointment` ADD COLUMN `course_id` bigint(20) NOT NULL COMMENT '所属课程';
+ALTER TABLE `staff_orginfo` ADD COLUMN `id_path` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT 'id全路径' ;
+ALTER TABLE `student` ADD COLUMN `grade` year NULL COMMENT '年级';
+ALTER TABLE `student` ADD COLUMN `join_date` date NULL DEFAULT NULL COMMENT '入学日期';
+ALTER TABLE `lesson_student` ADD COLUMN `add_time` datetime(0) NULL DEFAULT NULL COMMENT '创建时间',
+
+INSERT INTO `setting`(`id`, `name`, `code`, `remark`, `sort_num`) VALUES (4, '微信公众号设置', 'wx_mp_setting', NULL, 0);
+INSERT INTO `setting_option`(`id`, `setting_id`, `name`, `code`, `value`, `value_type`, `info`, `sort_num`) VALUES (10, 4, '公众号AppId', 'wx_mp_app_id', 'app_idAAAAA', 'str', NULL, 0);
+INSERT INTO `setting_option`(`id`, `setting_id`, `name`, `code`, `value`, `value_type`, `info`, `sort_num`) VALUES (11, 4, '公众号Secret', 'wx_mp_secret', 'secret', 'str', NULL, 0);
+INSERT INTO `setting_option`(`id`, `setting_id`, `name`, `code`, `value`, `value_type`, `info`, `sort_num`) VALUES (12, 4, '公众号Token', 'wx_mp_token', 'token', 'str', NULL, 0);
+INSERT INTO `setting_option`(`id`, `setting_id`, `name`, `code`, `value`, `value_type`, `info`, `sort_num`) VALUES (13, 4, '公众号AesKey', 'wx_mp_aes_key', 'aes_key', 'str', NULL, 0);
+INSERT INTO `setting_option`(`id`, `setting_id`, `name`, `code`, `value`, `value_type`, `info`, `sort_num`) VALUES (14, 1, '每天上课提醒时间', 'lesson_remind_time', '18:30', 'time', NULL, 0);
+INSERT INTO `setting_option`(`id`, `setting_id`, `name`, `code`, `value`, `value_type`, `info`, `sort_num`) VALUES (15, 1, '每天上课次数预警时间', 'lesson_count_warning_time', '7:00', 'time', NULL, 0);
+
+CREATE TABLE `quartz_job` (
+  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `job_name` varchar(255) DEFAULT NULL COMMENT '任务名称',
+  `group_name` varchar(255) DEFAULT NULL COMMENT '任务分组',
+  `job_class` varchar(255) DEFAULT NULL COMMENT '执行类路径',
+  `status` tinyint(1) DEFAULT '1' COMMENT '状态',
+  `cron_expression` varchar(255) DEFAULT NULL COMMENT 'cron表达式',
+  PRIMARY KEY (`id`) USING BTREE
+) ENGINE=MyISAM AUTO_INCREMENT=12 DEFAULT CHARSET=utf8 COMMENT='定时任务';
+
+
+DROP TABLE IF EXISTS `appointment`;
+CREATE TABLE `appointment`  (
+  `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `lesson_id` bigint(20) NOT NULL COMMENT '试听课次',
+  `student_id` bigint(20) NOT NULL COMMENT '学员id',
+  `add_time` datetime(0) NULL DEFAULT NULL COMMENT '预约时间',
+  `remark` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '备注',
+  `verify_state` tinyint(2) NULL DEFAULT 1 COMMENT '审核状态',
+  `verify_time` datetime(0) NULL DEFAULT NULL COMMENT '审核时间',
+  `verify_staff` bigint(20) NULL DEFAULT NULL COMMENT '审核人',
+  `verify_remark` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '审核内容',
+  `course_id` bigint(20) NULL DEFAULT NULL COMMENT '所属课程',
+  PRIMARY KEY (`id`) USING BTREE,
+  INDEX `student_id`(`student_id`) USING BTREE,
+  INDEX `lesson_id`(`lesson_id`) USING BTREE
+) ENGINE = MyISAM AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '试听预约记录' ROW_FORMAT = Dynamic;
+
+
+DROP TABLE IF EXISTS `message`;
+CREATE TABLE `message`  (
+  `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `title` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '发送标题',
+  `content` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '发送内容',
+  `to_id` bigint(20) NOT NULL COMMENT '接收人ID 0所有',
+  `from_id` bigint(20) NOT NULL DEFAULT 0 COMMENT '发送人ID',
+  `to_type` tinyint(4) NULL DEFAULT NULL COMMENT '接受者类型  1 老师 2 学生',
+  `from_type` tinyint(4) NULL DEFAULT NULL COMMENT '发送者类型 0 系统 1 老师 2 学生',
+  `send_time` datetime(0) NULL DEFAULT NULL COMMENT '发送时间',
+  `add_time` datetime(0) NULL DEFAULT NULL COMMENT '创建时间',
+  `creator` bigint(20) NULL DEFAULT NULL COMMENT '创建者',
+  `deleted` tinyint(1) NULL DEFAULT NULL COMMENT '删除标记',
+  PRIMARY KEY (`id`) USING BTREE
+) ENGINE = MyISAM AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '站内信' ROW_FORMAT = Dynamic;
+
+
+```
